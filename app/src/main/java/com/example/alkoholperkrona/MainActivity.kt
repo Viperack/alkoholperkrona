@@ -1,23 +1,17 @@
 package com.example.alkoholperkrona
 
 
-import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
-import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.GravityCompat
-import androidx.fragment.app.Fragment
-import androidx.room.Entity
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.test.platform.app.InstrumentationRegistry
 import com.example.alkoholperkrona.database.Product
 import com.example.alkoholperkrona.database.ProductDatabase
-import com.example.alkoholperkrona.database.ProductDatabaseDao
 import com.google.android.material.navigation.NavigationView
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
 
@@ -26,19 +20,40 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        setUpDatabase()
+
         val db = ProductDatabase.getInstance(this)
         val productDao = db.productDatabaseDao
 
-        var responseFromAPIJSON: JSONObject
 
-        val client = OkHttpClient()
+        //val retrievedProduct: Product = productDao.getFirstRow()
+        //println(retrievedProduct)
+        //Log.d("TAG", retrievedProduct.toString())
 
-        val request = Request.Builder()
+}
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+
+        return true
+    }
+
+    fun setUpDatabase() {
+        val db = ProductDatabase.getInstance(this)
+        val productDao = db.productDatabaseDao
+
+        productDao.deleteALL()
+
+        if (productDao.getFirstRow() == null) {
+            Log.d("TAG", "Table is empty")
+
+            val client = OkHttpClient()
+
+            val request = Request.Builder()
                 .url("https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?")
                 .header("Ocp-Apim-Subscription-Key", "cfc702aed3094c86b92d6d4ff7a54c84")
                 .build()
 
-            client.newCall(request).enqueue(object : Callback {
+            client.newCall(request).enqueue(object : okhttp3.Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     e.printStackTrace()
                 }
@@ -53,8 +68,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                         var responseFromAPIJSON = JSONObject(response.body!!.string())
 
-                        /*for (i in 0..29) {
-                            val product = Product(
+                        var productArray: ArrayList<Product> = ArrayList()
+
+                        for (i in 0..29) {
+                            productArray[i] = Product(
                                 if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(i).isNull("productId")) responseFromAPIJSON.getJSONArray("products").getJSONObject(i)["productId"] as String else "",
 
                                 if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(i).isNull("productNumber")) responseFromAPIJSON.getJSONArray("products").getJSONObject(i)["productNumber"] as String else "",
@@ -93,59 +110,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
 
                                 )
-                        }*/
-
-                        val product = Product(
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productId")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productId"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productNumber")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productNumber"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productNameBold")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productNameBold"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productNameThin")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productNameThin"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("category")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["category"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productNumberShort")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productNumberShort"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("producerName")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["producerName"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("supplierName")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["supplierName"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("bottleText")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["bottleText"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("isOrganic")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["isOrganic"] as Boolean else false,
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("isSustainableChoice")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["isSustainableChoice"] as Boolean else false,
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("productLaunchDate")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["productLaunchDate"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("alcoholPercentage")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["alcoholPercentage"] as Double else 0.0,
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("volumeText")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["volumeText"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("volume")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["volume"] as Double else 0.0,
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("price")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["price"] as Double else 0.0,
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("country")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["country"] as String else "",
-
-                            if (!responseFromAPIJSON.getJSONArray("products").getJSONObject(0).isNull("isDiscontinued")) responseFromAPIJSON.getJSONArray("products").getJSONObject(0)["isDiscontinued"] as Boolean else false,
-                        )
-                        //println(product)
-
-                        //productDao.insert(product)
-                        val retrievedProduct: Product = productDao.getFirstRow()
-                        println(retrievedProduct)
+                        }
                     }
-                } 
+                }
             })
 
-
-}
-
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-
-        return true
+        }
     }
+
 }

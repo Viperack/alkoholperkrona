@@ -19,4 +19,7 @@ interface ProductDatabaseDao {
 
     @Query("SELECT * FROM product_information_table LIMIT 1")
     fun getFirstRow(): Product
+
+    @Query("DELETE FROM product_information_table")
+    fun deleteALL()
 }
